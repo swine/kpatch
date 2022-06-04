@@ -4,6 +4,12 @@ if [[ ${KPATCH_GCC_DEBUG:-0} -ne 0 ]]; then
 	set -o xtrace
 fi
 
+# cope with multiply-prefixed invocation
+while [[ "$1" =~ /kpatch-cc$ ]]; do
+  echo >&2 kpatch-cc: stuttered prefix
+  shift
+done
+
 TOOLCHAINCMD="$1"
 shift
 
