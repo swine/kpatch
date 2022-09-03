@@ -225,6 +225,8 @@ use_klp_arch()
 {
 	if kernel_is_rhel; then
 		! rhel_kernel_version_gte 4.18.0-284.el8
+	elif grep -Esq '^#define\s*NO_KLP_ARCH' include/linux/livepatch.h; then
+		false # kernel needs no .klp.arch sections
 	else
 		! kernel_version_gte 5.8.0
 	fi
@@ -234,6 +236,8 @@ support_klp_replace()
 {
 	if kernel_is_rhel; then
 		rhel_kernel_version_gte 4.18.0-193.el8
+	elif grep -Esq '^#define\s*HAVE_KLP_REPLACE' include/linux/livepatch.h; then
+		true # kernel explicitly indicates support
 	else
 		kernel_version_gte 5.1.0
 	fi
