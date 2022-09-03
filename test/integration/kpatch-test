@@ -317,6 +317,8 @@ support_klp_replace()
 {
 	if kernel_is_rhel; then
 		rhel_kernel_version_gte 4.18.0-193.el8
+	elif grep -Esq '^#define\s*HAVE_KLP_REPLACE' include/linux/livepatch.h; then
+		true # kernel explicitly indicates support
 	else
 		kernel_version_gte 5.1.0
 	fi
