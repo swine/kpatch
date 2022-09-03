@@ -38,7 +38,6 @@ set -o pipefail
 
 BASE="$PWD"
 SCRIPTDIR="$(readlink -f "$(dirname "$(type -p "$0")")")"
-ARCH="$(uname -m)"
 CPUS="$(getconf _NPROCESSORS_ONLN)"
 CACHEDIR="${CACHEDIR:-$HOME/.kpatch}"
 KERNEL_SRCDIR="$CACHEDIR/src"
@@ -798,6 +797,19 @@ if [[ ${#PATCH_LIST[@]} -eq 0 ]]; then
 fi
 
 trace_on
+
+if [[ -n "${VMLINUX}" || -f "$BASE/vmlinux" ]]; then
+	ARCH="$(file "${VMLINUX:-$BASE/vmlinux}")"
+	case "${ARCH}" in
+	(*aarch64*) ARCH=aarch64;;
+	(*ppc64le*) ARCH=ppc64le;;
+	(*s390*)    ARCH=s390;;
+	(*x86?64*)  ARCH=x86_64;;
+	(*) die "Kernel ${VMLINUX:-$BASE/vmlinux} has Unsupported Architecture (${ARCH})";;
+	esac
+else
+	ARCH="$(uname -m)"
+fi
 
 if [[ -n "$SRCRPM" ]]; then
 	if  [[ -n "$ARCHVERSION" ]]; then
