@@ -1054,7 +1054,8 @@ if [[ -n "$CONFIG_LIVEPATCH" ]] && (kernel_is_rhel || kernel_version_gte 4.9.0);
 
 	if use_klp_arch; then
 		USE_KLP_ARCH=1
-		KPATCH_LDFLAGS="--unique=.parainstructions --unique=.altinstructions"
+		[[ -n "${CONFIG_LD_IS_LLD}" ]] || \
+			KPATCH_LDFLAGS="--unique=.parainstructions --unique=.altinstructions"
 		CDO_FLAGS+=(--klp-arch)
 	fi
 
