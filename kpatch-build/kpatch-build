@@ -1123,6 +1123,12 @@ KPATCH_LDFLAGS=""
 USE_KLP=0
 USE_KLP_ARCH=0
 
+# google local, assume CLANG=1, as before 4.17 .config does not support
+if ! kernel_version_gte 4.17; then
+	: default "${CONFIG_CC_IS_CLANG:=y}"
+	: default "${CONFIG_LD_IS_LLD:=y}"
+fi
+
 if [[ -n "$CONFIG_LIVEPATCH" ]] && (kernel_is_rhel || kernel_version_gte 4.9.0); then
 
 	USE_KLP=1
