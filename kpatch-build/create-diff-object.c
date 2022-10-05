@@ -4149,7 +4149,7 @@ static void kpatch_find_func_profiling_calls(struct kpatch_elf *kelf)
 	unsigned char *insn;
 
 	list_for_each_entry(sym, &kelf->symbols, list) {
-		if (sym->type != STT_FUNC || !sym->sec || !sym->sec->rela)
+		if (sym->type != STT_FUNC || !sym->sec)
 			continue;
 
 		switch(kelf->arch) {
@@ -4174,6 +4174,8 @@ static void kpatch_find_func_profiling_calls(struct kpatch_elf *kelf)
 			break;
 		}
 		case PPC64:
+			if (!sym->sec->rela)
+				continue;
 			list_for_each_entry(rela, &sym->sec->rela->relas, list) {
 				if (!strcmp(rela->sym->name, "_mcount")) {
 					sym->has_func_profiling = 1;
@@ -4182,6 +4184,8 @@ static void kpatch_find_func_profiling_calls(struct kpatch_elf *kelf)
 			}
 			break;
 		case X86_64:
+			if (!sym->sec->rela)
+				continue;
 			rela = list_first_entry(&sym->sec->rela->relas, struct rela,
 						list);
 			if ((rela->type != R_X86_64_NONE &&
@@ -4193,6 +4197,8 @@ static void kpatch_find_func_profiling_calls(struct kpatch_elf *kelf)
 			sym->has_func_profiling = 1;
 			break;
 		case S390:
+			if (!sym->sec->rela)
+				continue;
 			/* Check for compiler generated fentry nop - jgnop 0 */
 			insn = sym->sec->data->d_buf;
 			if (insn[0] == 0xc0 && insn[1] == 0x04 &&
