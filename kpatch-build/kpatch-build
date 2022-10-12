@@ -1355,7 +1355,10 @@ for i in $FILES; do
 	find_kobj "$i"
 	cd "$TEMPDIR" || die
 	if [[ -e "orig/$i" ]]; then
-		if [[ -n $OOT_MODULE ]]; then
+		if cmp -s "orig/$i" "patched/$i"; then
+			: "$i unchanged"
+			continue
+		elif [[ -n $OOT_MODULE ]]; then
 			KOBJFILE_NAME="$(basename --suffix=.ko "$OOT_MODULE")"
 			KOBJFILE_NAME="${KOBJFILE_NAME//-/_}"
 			KOBJFILE_PATH="$OOT_MODULE"
@@ -1369,14 +1372,17 @@ for i in $FILES; do
 		else
 			KOBJFILE_NAME=$(basename "${KOBJFILE%.ko}")
 			KOBJFILE_NAME="${KOBJFILE_NAME//-/_}"
-			KOBJFILE_PATH="${TEMPDIR}/module/$KOBJFILE"
-			SYMTAB="${KOBJFILE_PATH}.symtab"
+			KOBJFILE_PATH="${BUILDDIR}/$KOBJFILE"
+			SYMTAB="${TEMPDIR}/module/$KOBJFILE".symtab
 			SYMVERS_FILE="$BUILDDIR/Module.symvers"
 		fi
 
-		"$READELF" -s --wide "$KOBJFILE_PATH" > "$SYMTAB"
-		if [[ "$ARCH" = "ppc64le" ]]; then
-			sed -ri 's/\s+\[<localentry>: 8\]//' "$SYMTAB"
+		if ! [[ "$SYMTAB" -nt "$KOBJFILE_PATH" ]]; then
+			mkdir -p "${SYMTAB%/*}"
+			"$READELF" -s --wide "$KOBJFILE_PATH" > "$SYMTAB"
+			if [[ "$ARCH" = "ppc64le" ]]; then
+				sed -ri 's/\s+\[<localentry>: 8\]//' "$SYMTAB"
+			fi
 		fi
 
 		# create-diff-object orig.o patched.o parent-name parent-symtab
