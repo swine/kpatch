@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-CC    = gcc
+CC    ?= gcc
 
 INSTALL = /usr/bin/install
 
