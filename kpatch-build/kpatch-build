@@ -58,12 +58,14 @@ APPLIED_PATCHES=0
 OOT_MODULE=
 KLP_REPLACE=1
 
-GCC="${CROSS_COMPILE:-}gcc"
-CLANG="${CROSS_COMPILE:-}clang"
-LD="${CROSS_COMPILE:-}ld"
-LLD="${CROSS_COMPILE:-}ld.lld"
-READELF="${CROSS_COMPILE:-}readelf"
-OBJCOPY="${CROSS_COMPILE:-}objcopy"
+# default tools may be overridden by env
+[[ -n "$MAKE" ]] || MAKE="make"
+[[ -n "$LD" ]] || LD="${CROSS_COMPILE:-}ld"
+[[ -n "$LLD" ]] || LLD="${CROSS_COMPILE:-}ld.lld"
+[[ -n "$GCC" ]] || GCC="${CROSS_COMPILE:-}gcc"
+[[ -n "$CLANG" ]] || CLANG="${CROSS_COMPILE:-}clang"
+[[ -n "$READELF" ]] || READELF="${CROSS_COMPILE:-}readelf"
+[[ -n "$OBJCOPY" ]] || OBJCOPY="${CROSS_COMPILE:-}objcopy"
 
 warn() {
 	echo "ERROR: $1" >&2
@@ -1011,7 +1013,7 @@ else
 			[[ -z "$CONFIGFILE" ]] && CONFIGFILE="$KERNEL_SRCDIR/configs/kernel$ALT-$KVER-$ARCH.config"
 		fi
 
-		(cd "$KERNEL_SRCDIR" && make mrproper 2>&1 | logger) || die
+		(cd "$KERNEL_SRCDIR" && ${MAKE} mrproper 2>&1 | logger) || die
 
 	elif [[ "$DISTRO" = ubuntu ]] || [[ "$DISTRO" = debian ]]; then
 
@@ -1191,26 +1193,30 @@ save_env
 echo "Building original source"
 unset KPATCH_GCC_TEMPDIR
 
-KPATCH_CC_PREFIX="$TOOLSDIR/kpatch-cc "
+# prefix may be overridden for debug/etc
+: "${KPATCH_CC_PREFIX:="$TOOLSDIR/kpatch-cc "}"
+
 declare -a MAKEVARS
 if [[ -n "$CONFIG_CC_IS_CLANG" ]]; then
 	MAKEVARS+=("CC=${KPATCH_CC_PREFIX}${CLANG}")
-	MAKEVARS+=("HOSTCC=clang")
+	MAKEVARS+=("HOSTCC=${HOSTCC:-${CLANG}}")
 else
 	MAKEVARS+=("CC=${KPATCH_CC_PREFIX}${GCC}")
+	MAKEVARS+=("HOSTCC=${HOSTCC:-${GCC}}")
 fi
 
 if [[ -n "$CONFIG_LD_IS_LLD" ]]; then
 	MAKEVARS+=("LD=${KPATCH_CC_PREFIX}${LLD}")
-	MAKEVARS+=("HOSTLD=ld.lld")
+	MAKEVARS+=("HOSTLD=${HOSTLD:-${LLD}}")
 else
 	MAKEVARS+=("LD=${KPATCH_CC_PREFIX}${LD}")
+	MAKEVARS+=("HOSTLD=${HOSTLD:-${LD}}")
 fi
 
 
 # $TARGETS used as list, no quotes.
 # shellcheck disable=SC2086
-make "${MAKEVARS[@]}" "-j$CPUS" $TARGETS 2>&1 | logger || die
+${MAKE} "${MAKEVARS[@]}" "-j$CPUS" $TARGETS 2>&1 | logger || die
 
 # Save original module symvers
 cp -f "$BUILDDIR/Module.symvers" "$TEMPDIR/Module.symvers" || die
@@ -1223,7 +1229,7 @@ export KPATCH_GCC_SRCDIR="$BUILDDIR"
 save_env
 # $TARGETS used as list, no quotes.
 # shellcheck disable=SC2086
-KBUILD_MODPOST_WARN=1 make "${MAKEVARS[@]}" "-j$CPUS" $TARGETS 2>&1 | logger || die
+KBUILD_MODPOST_WARN=1 ${MAKE} "${MAKEVARS[@]}" "-j$CPUS" $TARGETS 2>&1 | logger || die
 
 # source.c:(.section+0xFF): undefined reference to `symbol'
 grep "undefined reference" "$LOGFILE" | sed -r "s/^.*\`(.*)'$/\\1/" \
@@ -1426,7 +1432,7 @@ KPATCH_LDFLAGS="$KPATCH_LDFLAGS" \
 CROSS_COMPILE="$CROSS_COMPILE"
 save_env
 
-make "${MAKEVARS[@]}" 2>&1 | logger || die
+${MAKE} "${MAKEVARS[@]}" 2>&1 | logger || die
 
 if [[ "$USE_KLP" -eq 1 ]]; then
 	if [[ "$USE_KLP_ARCH" -eq 0 ]]; then
