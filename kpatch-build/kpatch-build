@@ -57,6 +57,7 @@ declare -a PATCH_LIST
 APPLIED_PATCHES=0
 OOT_MODULE=
 KLP_REPLACE=1
+declare -a MAKEVARS
 
 # default tools may be overridden by env
 [[ -n "$MAKE" ]] || MAKE="make"
@@ -682,9 +683,10 @@ usage() {
 	echo "		--skip-cleanup          Skip post-build cleanup" >&2
 	echo "		--skip-compiler-check   Skip compiler version matching check" >&2
 	echo "		                        (not recommended)" >&2
+	echo "		--make-opt		pass an arg to make" >&2
 }
 
-options="$(getopt -o ha:r:s:c:v:j:t:n:o:dR -l "help,archversion:,sourcerpm:,sourcedir:,config:,vmlinux:,jobs:,target:,name:,output:,oot-module:,oot-module-src:,debug,skip-gcc-check,skip-compiler-check,skip-cleanup,non-replace" -- "$@")" || die "getopt failed"
+options="$(getopt -o ha:r:s:c:v:j:t:n:o:dR -l "help,archversion:,sourcerpm:,sourcedir:,config:,vmlinux:,jobs:,target:,make-opt:,name:,output:,oot-module:,oot-module-src:,debug,skip-gcc-check,skip-compiler-check,skip-cleanup,non-replace" -- "$@")" || die "getopt failed"
 
 eval set -- "$options"
 
@@ -765,6 +767,10 @@ while [[ $# -gt 0 ]]; do
 	--skip-compiler-check)
 		echo "WARNING: Skipping compiler version matching check (not recommended)"
 		SKIPCOMPILERCHECK=1
+		;;
+	--make-opt)
+		MAKEVARS+=("$2")
+		shift
 		;;
 	*)
 		[[ "$1" = "--" ]] && shift && continue
@@ -1200,7 +1206,6 @@ unset KPATCH_GCC_TEMPDIR
 # prefix may be overridden for debug/etc
 : "${KPATCH_CC_PREFIX:="$TOOLSDIR/kpatch-cc "}"
 
-declare -a MAKEVARS
 if [[ -n "$CONFIG_CC_IS_CLANG" ]]; then
 	MAKEVARS+=("CC=${KPATCH_CC_PREFIX}${CLANG}")
 	MAKEVARS+=("HOSTCC=${HOSTCC:-${CLANG}}")
