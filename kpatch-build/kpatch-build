@@ -57,6 +57,8 @@ declare -a PATCH_LIST
 APPLIED_PATCHES=0
 OOT_MODULE=
 KLP_REPLACE=1
+declare -a MAKEVARS
+declare -a CDO_FLAGS
 
 # default tools may be overridden by env
 [[ -n "$MAKE" ]] || MAKE=make
@@ -686,9 +688,11 @@ usage() {
 	echo "		--skip-cleanup          Skip post-build cleanup" >&2
 	echo "		--skip-compiler-check   Skip compiler version matching check" >&2
 	echo "		                        (not recommended)" >&2
+	echo "		--make-opt		pass an arg to make" >&2
+	echo "		--cdo-opt		pass an arg to create-diff-object" >&2
 }
 
-options="$(getopt -o ha:r:s:c:v:j:t:n:o:dR -l "help,archversion:,sourcerpm:,sourcedir:,config:,vmlinux:,jobs:,target:,name:,output:,oot-module:,oot-module-src:,debug,skip-gcc-check,skip-compiler-check,skip-cleanup,non-replace" -- "$@")" || die "getopt failed"
+options="$(getopt -o ha:r:s:c:v:j:t:n:o:dR -l "help,archversion:,sourcerpm:,sourcedir:,cdo-opt:,config:,vmlinux:,jobs:,target:,make-opt:,name:,output:,oot-module:,oot-module-src:,debug,skip-gcc-check,skip-compiler-check,skip-cleanup,non-replace" -- "$@")" || die "getopt failed"
 
 eval set -- "$options"
 
@@ -769,6 +773,14 @@ while [[ $# -gt 0 ]]; do
 	--skip-compiler-check)
 		echo "WARNING: Skipping compiler version matching check (not recommended)"
 		SKIPCOMPILERCHECK=1
+		;;
+	--make-opt)
+		MAKEVARS+=("$2")
+		shift
+		;;
+	--cdo-opt)
+		CDO_FLAGS+=("$2")
+		shift
 		;;
 	*)
 		[[ "$1" = "--" ]] && shift && continue
@@ -1025,7 +1037,7 @@ if [[ -n "$CONFIG_LIVEPATCH" ]] && (kernel_is_rhel || kernel_version_gte 4.9.0);
 	if use_klp_arch; then
 		USE_KLP_ARCH=1
 		KPATCH_LDFLAGS="--unique=.parainstructions --unique=.altinstructions"
-		CDO_FLAGS="--klp-arch"
+		CDO_FLAGS+=(--klp-arch)
 	fi
 
 	if [[  "$KLP_REPLACE" -eq 1 ]] ; then
@@ -1114,7 +1126,6 @@ unset KPATCH_GCC_TEMPDIR
 # prefix may be overridden for debug/etc
 : "${KPATCH_CC_PREFIX:="$TOOLSDIR/kpatch-cc "}"
 
-declare -a MAKEVARS
 if [[ -n "$CONFIG_CC_IS_CLANG" ]]; then
 	MAKEVARS+=("CC=${KPATCH_CC_PREFIX}${CLANG}")
 	MAKEVARS+=("HOSTCC=${HOSTCC:-${CLANG}}")
@@ -1271,7 +1282,7 @@ for i in $FILES; do
 
 		# create-diff-object orig.o patched.o parent-name parent-symtab
 		#		     Module.symvers patch-mod-name output.o
-		"$TOOLSDIR"/create-diff-object $CDO_FLAGS "orig/$i" "patched/$i" "$KOBJFILE_NAME" \
+		"$TOOLSDIR"/create-diff-object "${CDO_FLAGS[@]}" "orig/$i" "patched/$i" "$KOBJFILE_NAME" \
 			"$SYMTAB" "$SYMVERS_FILE" "${MODNAME//-/_}" \
 			"output/$i" 2>&1 | logger 1
 		check_pipe_status create-diff-object
