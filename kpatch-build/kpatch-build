@@ -65,6 +65,7 @@ declare -a CDO_FLAGS
 [[ -n "$LLD" ]] || LLD="${CROSS_COMPILE:-}ld.lld"
 [[ -n "$GCC" ]] || GCC="${CROSS_COMPILE:-}gcc"
 [[ -n "$CLANG" ]] || CLANG="${CROSS_COMPILE:-}clang"
+[[ -n "$AR" ]] || AR="${CROSS_COMPILE:-}llvm-ar"
 [[ -n "$READELF" ]] || READELF="${CROSS_COMPILE:-}readelf"
 [[ -n "$OBJCOPY" ]] || OBJCOPY="${CROSS_COMPILE:-}objcopy"
 
@@ -1160,6 +1161,9 @@ else
 	MAKEVARS+=("LD=${KPATCH_CC_PREFIX}${LD}")
 	MAKEVARS+=("HOSTLD=${HOSTLD:-${LD}}")
 fi
+
+MAKEVARS+=("AR=${KPATCH_CC_PREFIX}${AR}")
+MAKEVARS+=("HOSTAR=${HOSTAR:-${AR}}")
 
 
 # $TARGETS used as list, no quotes.

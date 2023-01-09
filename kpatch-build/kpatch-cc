@@ -93,6 +93,8 @@ if [[ "$TOOLCHAINCMD" =~ ^(.*[-/])?(gcc|clang)$ ]] ; then
 		fi
 		shift
 	done
+      elif [[ "$TOOLCHAINCMD" =~ ^(.*[-/])?ar$ ]] ; then
+        echo >&2 $0: watch "$TOOLCHAINCMD" "${args[@]}"
 fi
 
 exec "$TOOLCHAINCMD" "${args[@]}"
