@@ -633,6 +633,7 @@ find_kobj() {
 			arch/x86/kernel/head*.o|\
 			arch/x86/kernel/platform-quirks.o|\
 			arch/x86/lib/lib.a|\
+			init/version-timestamp.o|\
 			lib/lib.a)
 				KOBJFILE=vmlinux
 				return
