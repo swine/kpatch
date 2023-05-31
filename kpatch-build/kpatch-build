@@ -1435,6 +1435,7 @@ for i in $FILES; do
 
 		# With CONFIG_LTO_CLANG, multiple .thinlto files share a
 		# symtab file. Only generate the symtab file once.
+		mkdir -p "${SYMTAB%/*}"
 		[[ -e "$SYMTAB" ]] || "$READELF" -s --wide "$KOBJFILE_PATH" > "$SYMTAB"
 		if [[ "$ARCH" = "ppc64le" ]]; then
 			sed -ri 's/\s+\[<localentry>: 8\]//' "$SYMTAB"
