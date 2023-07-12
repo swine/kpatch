@@ -2942,6 +2942,21 @@ static void kpatch_mark_ignored_sections(struct kpatch_elf *kelf)
 			    !strcmp(sec->name, "__patchable_function_entries"))
 				sec->ignore = 1;
 		}
+
+		/*
+		 * With CONFIG_LTO_CLANG, we see some weird new functions,
+		 * such as:
+		 * __initstub__kmod_syscall__728_5326_bpf_syscall_sysctl_init7
+		 * while the original function is very similar, like:
+		 * __initstub__kmod_syscall__728_5324_bpf_syscall_sysctl_init7
+		 *
+		 * We don't have very good solution for it yet. To workaround
+		 * the issue, it seems safe to ignore .init.text changes in
+		 * vmlinux.o. This will skip such new functions.
+		 */
+		if (!strncmp(childobj, "vmlinux.o", 9) &&
+		    !strncmp(sec->name, ".init.text", 10))
+			sec->ignore = 1;
 	}
 
 	sec = find_section_by_name(&kelf->sections, ".kpatch.ignore.sections");

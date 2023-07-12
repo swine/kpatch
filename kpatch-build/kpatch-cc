@@ -87,6 +87,24 @@ if [[ "$TOOLCHAINCMD" =~ ^(.*[-/])?(gcc|clang)$ ]] ; then
 					args+=(--warn-unresolved-symbols)
 					break
 					;;
+				*/.tmp_*.o)
+					# .tmp_*.o is used for single file modules.
+					# See "cmd_ld_single_m" in scripts/Makefile.build.
+					if [[ $KPATCH_CC_HANDLE_LTO -ne 0 ]] ; then
+						mkdir -p "$KPATCH_GCC_TEMPDIR/orig/$(dirname "$relobj")"
+						cp "${obj/.tmp_/}".thinlto.o* "$KPATCH_GCC_TEMPDIR/orig/$(dirname "$relobj")"
+						echo "${obj/.tmp_/}".thinlto.o* >> "$KPATCH_GCC_TEMPDIR/thinlto_objs"
+					fi
+					break
+					;;
+				*.o)
+					if [[ $KPATCH_CC_HANDLE_LTO -ne 0 ]] ; then
+						mkdir -p "$KPATCH_GCC_TEMPDIR/orig/$(dirname "$relobj")"
+						cp "$obj".thinlto* "$KPATCH_GCC_TEMPDIR/orig/$(dirname "$relobj")"
+						echo "$obj".thinlto.o* >> "$KPATCH_GCC_TEMPDIR/thinlto_objs"
+					fi
+					break
+					;;
 				*)
 					break
 					;;
