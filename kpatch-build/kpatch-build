@@ -66,6 +66,16 @@ declare -a MAKEVARS
 [[ -n "$CLANG" ]] || CLANG="${CROSS_COMPILE:-}clang"
 [[ -n "$READELF" ]] || READELF="${CROSS_COMPILE:-}readelf"
 [[ -n "$OBJCOPY" ]] || OBJCOPY="${CROSS_COMPILE:-}objcopy"
+[[ -x "$DWARFDUMP" ]] || DWARFDUMP="${CROSS_COMPILE:-}dwarfdump"
+
+if [[ -n "$READELF_WI" ]]; then
+	: already set, probably to one of the following:
+elif [[ -z "$DWARFDUMP" || $(${READELF} -v 2>&1) =~ 'GNU readelf' ]]; then
+	READELF_WI="${READELF:-readelf} -wi"
+else
+	# LLVM has a different tool for DWARF metadata
+	READELF_WI="$DWARFDUMP --debug-info"
+fi
 
 warn() {
 	echo "ERROR: $1" >&2
@@ -380,7 +390,7 @@ find_special_section_data() {
 	local SPECIAL_VARS
 	# If $AWK_OPTIONS are blank gawk would treat "" as a blank script
 	# shellcheck disable=SC2086
-	SPECIAL_VARS="$("$READELF" -wi "$VMLINUX" |
+	SPECIAL_VARS="$($READELF_WI "$VMLINUX" |
 		gawk --non-decimal-data $AWK_OPTIONS '
 		BEGIN { a = b = e = f = i = j = o = p = s = 0 }
 
