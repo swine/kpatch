@@ -31,6 +31,7 @@ if [[ "$TOOLCHAINCMD" =~ ^(.*[-/])?(gcc|clang)$ ]] ; then
 			[[ "$obj" = */.tmp_*.o ]] && obj="${obj/.tmp_/}"
 			relobj=${obj##"$KPATCH_GCC_SRCDIR"/}
 			case "$relobj" in
+				# fixed exclusion list, can be augmented by KPATCH_CC_EXCLUDE
 				*.mod.o|\
 				*built-in.o|\
 				*built-in.a|\
@@ -61,6 +62,9 @@ if [[ "$TOOLCHAINCMD" =~ ^(.*[-/])?(gcc|clang)$ ]] ; then
 					break
 					;;
 				*.o)
+					if [[ "$relobj" == @(${KPATCH_CC_EXCLUDE}) ]]; then
+						break
+					fi
 					mkdir -p "$KPATCH_GCC_TEMPDIR/orig/$(dirname "$relobj")"
 					[[ -e "$obj" ]] && cp -f "$obj" "$KPATCH_GCC_TEMPDIR/orig/$relobj"
 					echo "$relobj" >> "$KPATCH_GCC_TEMPDIR/changed_objs"
